@@ -1,15 +1,19 @@
 'use client';
 import React from 'react'
-import {SubmitHandler, useForm} from "react-hook-form";
+import {useForm} from "react-hook-form";
 import {Button} from "@/components/ui/button";
 import InputField from "@/components/forms/InputField";
 import SelectField from "@/components/forms/SelectField";
 import {INVESTMENT_GOALS, PREFERRED_INDUSTRIES, RISK_TOLERANCE_OPTIONS} from "@/lib/constants";
 import {CountrySelectField} from "@/components/forms/CountrySelectField";
 import FooterLink from "@/components/forms/FooterLink";
+import {signUpWithEmail} from "@/lib/actions/auth.actions";
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
 
 
 const SignUp = () => {
+    const router = useRouter();
     const {
         register,
         handleSubmit,
@@ -26,18 +30,29 @@ const SignUp = () => {
             preferredIndustry: 'Technology'
         },
         mode: 'onBlur'
-    }, );
-    const onSubmit = async (data:SignUpFormData) => {
+    });
+
+    const onSubmit = async (data: SignUpFormData) => {
         try{
-            console.log(data);
+            const result = await signUpWithEmail(data);
+            if(result.success) {
+                toast.success('Account created successfully!', {
+                    description: 'Welcome to Signalist'
+                });
+                // Force a hard navigation to ensure session is picked up
+                window.location.href = '/';
+            }
         } catch (e) {
-            console.log(e)
+            console.error(e);
+            toast.error('Sign up failed', {
+                description: e instanceof Error ? e.message : 'Failed to create an account'
+            })
         }
     }
 
     return (
         <>
-            <h1 className="form-title">Sign Up @ Personalize</h1>
+            <h1 className="form-title">Sign Up & Personalize</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <InputField
@@ -55,7 +70,7 @@ const SignUp = () => {
                     placeholder="contact@jsmastery.com"
                     register={register}
                     error={errors.email}
-                    validation={{ required: 'Email is required', pattern: /^\w+@\w+$/ , message: 'Email address is required' }}
+                    validation={{ required: 'Email is required', pattern: /^\w+@\w+\.\w+$/ }}
                 />
 
                 <InputField
@@ -75,7 +90,6 @@ const SignUp = () => {
                     error={errors.country}
                     required
                 />
-
 
                 <SelectField
                     name="investmentGoals"
@@ -108,10 +122,10 @@ const SignUp = () => {
                 />
 
                 <Button type="submit" disabled={isSubmitting} className="yellow-btn w-full mt-5">
-                    {isSubmitting ? 'Creating Account' : 'Start Your Investing Journey'}
+                    {isSubmitting ? 'Creating Account...' : 'Start Your Investing Journey'}
                 </Button>
-                
-                <FooterLink text="Already have an account" linkText="Sign in" href="/sign-in"/>
+
+                <FooterLink text="Already have an account?" linkText="Sign in" href="/sign-in"/>
             </form>
         </>
     )
